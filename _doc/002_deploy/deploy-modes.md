@@ -1,7 +1,7 @@
 # 部署三模式 —— 审计域视角（M2 #34）
 
 > 本域是 `z_audit_event` 哈希链台账的**候选唯一写者**。三模式的完整对照表在编排层仓
-> `z-biz-security/_doc/002_deploy/deploy-modes.md`，本文只写**审计域自己**在各模式下的角色与红线。
+> `z-security/_doc/002_deploy/deploy-modes.md`，本文只写**审计域自己**在各模式下的角色与红线。
 
 ## 本域在三模式下的角色
 

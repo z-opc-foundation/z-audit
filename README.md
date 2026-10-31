@@ -3,9 +3,9 @@
 > **审计与合规留痕** —— 事件模型 + **哈希链** + 事件出口 SPI + 留存期策略。
 > 边界一句话：**只证明「发生过什么、没被改过」，不做业务判断、不存业务数据。**
 
-安全线四层能力栈的合规层。同族：`z-sense` · `z-mask` · `z-watermark` · `z-biz-security`（编排）。
+安全线四层能力栈的合规层。同族：`z-sense` · `z-mask` · `z-watermark` · `z-security`（编排）。
 
-立项文档：lead `002_项目需求/001_特性需求/015_z-biz-security_数据安全线`。
+立项文档：lead `002_项目需求/001_特性需求/015_z-security_数据安全线`。
 
 ## 📋 基本信息
 
@@ -170,7 +170,7 @@ z-audit/
 | GET | `/api/audit/health` | 健康检查（**无 /z-team 前缀**，探活路径不带业务前缀） |
 
 > ★ **本域是 `z_audit_event` 表的唯一权威写者**（哈希链要求单写者 ——
-> 多写者各持链尾 ⇒ 链分叉）。z-watermark 与 z-biz-security 编排层都交给本域写。
+> 多写者各持链尾 ⇒ 链分叉）。z-watermark 与 z-security 编排层都交给本域写。
 > 三模式下这份职责怎么落（谁写、谁只读、怎么防链分叉）见 [`_doc/002_deploy/deploy-modes.md`](_doc/002_deploy/deploy-modes.md)。
 
 ## 🧪 测试
