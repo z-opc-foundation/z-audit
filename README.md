@@ -171,6 +171,7 @@ z-audit/
 
 > ★ **本域是 `z_audit_event` 表的唯一权威写者**（哈希链要求单写者 ——
 > 多写者各持链尾 ⇒ 链分叉）。z-watermark 与 z-biz-security 编排层都交给本域写。
+> 三模式下这份职责怎么落（谁写、谁只读、怎么防链分叉）见 [`_doc/002_deploy/deploy-modes.md`](_doc/002_deploy/deploy-modes.md)。
 
 ## 🧪 测试
 
@@ -180,6 +181,8 @@ mvn -f z-audit-core/pom.xml test       # 58 例
 mvn -f z-audit-starter/pom.xml test    # 3 例（H2 真落库）
 mvn -f z-audit-web/pom.xml test        # 20 例（H2 真落库）
 ```
+
+> **CI**：push / PR 自动跑 GitHub Actions（`.github/workflows/ci.yml`：JDK 17 + `mvn -B -ntp verify`）。
 
 **core 58 例**（原 24 + 锚点 18 + 溯源 16）：默认值补全、null 安全、出口异常不外抛、链头哨兵、
 链式相连、篡改检出、删除检出、空链完整、无查询出口降级、hash 依赖 prevHash、
@@ -234,5 +237,6 @@ GET 过滤、**绕过应用直接改库 ⇒ 检出链断**、取链尾；
 - [`_doc/002_deploy/`](_doc/002_deploy/) — 部署资产与初始化 SQL：
   - [`init.sql`](_doc/002_deploy/init.sql) — 2 张表（幂等，可重复执行）。
   - [`init/`](_doc/002_deploy/init/) — 一次性增量迁移（`002_anchor_fingerprint.sql`，**只执行一次**）。
+  - [`deploy-modes.md`](_doc/002_deploy/deploy-modes.md) — 部署三模式（审计域视角：单写者红线、链尾重载、锚点外部化不变式）。
 - [`_doc/005_testing/`](_doc/005_testing/) — 验收复跑：
   - [`001_验收复跑.md`](_doc/005_testing/001_验收复跑.md) — 五仓复跑命令、实测读数、已知边界与生产执行清单。
