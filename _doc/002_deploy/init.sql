@@ -62,14 +62,27 @@ CREATE TABLE IF NOT EXISTS z_audit_event (
 --    校验时拿快照的 hash 与实际链比对 ⇒ 尾部被删也能发现。
 --
 --    幂等键：(tenant_id, anchor_key) 唯一 —— 同键覆盖写（幂等 upsert 语义）。
+--
+--    ⚠️ **tenant_id 存空串而不是 NULL**：MySQL 的唯一索引里 NULL 与 NULL **不相等**
+--    ⇒ tenant_id 为 NULL 时 (NULL, 'k1') 可以插 infinitely 多行 ⇒ upsert 失效、
+--    「同键覆盖」退化成「同键堆积」。H2 行为类似。故本表统一用 '' 表示「全域」。
+--
+--    ⚠️ **fingerprint 列**：锚点内容（chain_hash / event_count / anchored_at）的
+--    SHA-256 指纹。锚点自己也可能被绕过应用直接改库 ⇒ 光比对 chain_hash 会被骗过
+--    （改 chain_hash 与 event_count 让校验「看起来正常」）。绑一个指纹后，
+--    改任一字段就与指纹对不上 ⇒ 锚点自身被篡改也能检出。
+--
+--    ⚠️ **锚点表不在哈希链上**：它是「链外的独立存储」——
+--    删台账的人未必知道/删得掉它 ⇒ 这正是它能检出尾部截断的原因。
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS z_audit_chain_anchor (
-    id            BIGINT      NOT NULL AUTO_INCREMENT,
-    tenant_id     VARCHAR(64) NULL,
-    anchor_key    VARCHAR(64) NOT NULL,
-    chain_hash    VARCHAR(64) NOT NULL,
-    event_count   BIGINT      NOT NULL,
-    anchored_at   BIGINT      NOT NULL,
+    id            BIGINT       NOT NULL AUTO_INCREMENT,
+    tenant_id     VARCHAR(64)  NOT NULL DEFAULT '',
+    anchor_key    VARCHAR(64)  NOT NULL,
+    chain_hash    VARCHAR(64)  NOT NULL,
+    event_count   BIGINT       NOT NULL,
+    anchored_at   BIGINT       NOT NULL,
+    fingerprint   VARCHAR(64)  NOT NULL DEFAULT '',
     CONSTRAINT pk_z_audit_chain_anchor PRIMARY KEY (id),
     CONSTRAINT uk_z_audit_chain_anchor_key UNIQUE (tenant_id, anchor_key)
 );

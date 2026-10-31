@@ -1,8 +1,11 @@
 package com.zifang.z.audit.web.config;
 
 import com.zifang.z.audit.core.mapper.AuditEventMapper;
+import com.zifang.z.audit.core.mapper.ChainAnchorMapper;
 import com.zifang.z.audit.core.service.AuditService;
+import com.zifang.z.audit.core.service.ChainAnchorService;
 import com.zifang.z.audit.core.service.PersistentAuditStore;
+import com.zifang.z.audit.core.service.PersistentChainAnchorStore;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -65,5 +68,39 @@ public class AuditAutoConfiguration {
     @ConditionalOnMissingBean
     public AuditHealthIndicator auditHealthIndicator() {
         return new AuditHealthIndicator("z-audit");
+    }
+
+    /**
+     * 落库版链锚点存储。
+     *
+     * <p>⚠️ 同样**不用 {@code @ConditionalOnBean(ChainAnchorMapper.class)}** ——
+     * 理由同 {@link #persistentAuditStore}：自动装配里条件评估早于 {@code @MapperScan}。
+     *
+     * @param mapper 锚点 Mapper
+     * @return 锚点存储
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public PersistentChainAnchorStore persistentChainAnchorStore(ChainAnchorMapper mapper) {
+        return new PersistentChainAnchorStore(mapper);
+    }
+
+    /**
+     * 链锚点服务（**补上「尾部截断不可检出」这条边界**）。
+     *
+     * <p>查询出口直接给 {@link PersistentAuditStore}（它同时是 Sink 与 Query）——
+     * ⚠️ {@code AuditService} 是门面，**不实现** {@code AuditQuery}，不能当查询出口传。
+     *
+     * @param anchorStore 锚点存储
+     * @param auditStore  落库存储（兼查询出口）
+     * @return 锚点服务
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public ChainAnchorService chainAnchorService(PersistentChainAnchorStore anchorStore,
+                                                  PersistentAuditStore auditStore) {
+        ChainAnchorService service = new ChainAnchorService(anchorStore);
+        service.setQuery(auditStore);
+        return service;
     }
 }
