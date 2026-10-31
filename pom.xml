@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!--
+        审计与合规留痕 —— 审计与合规留痕：审计事件模型 + 事件出口 SPI（落库/日志/外部）+ 留存期策略
+
+        工程形状照抄 z-biz / z-etl（core+web 两段式 + 自管根 pom）：
+          parent = io.github.yuku123:z-boot-parent:1.2.0（Java 17 / Spring Boot 3 火车口径）
+          版本   = CI-friendly ${revision} + flatten-maven-plugin(oss)
+          发版   = 发 Maven Central 口径具备（namespace io.github.yuku123），**本轮不发制品**
+    -->
+    <parent>
+        <groupId>io.github.yuku123</groupId>
+        <artifactId>z-boot-parent</artifactId>
+        <version>1.2.0</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>io.github.yuku123</groupId>
+    <artifactId>z-audit</artifactId>
+    <version>${revision}</version>
+    <packaging>pom</packaging>
+
+    <name>审计与合规留痕 :: root</name>
+    <description>审计与合规留痕：审计事件模型 + 事件出口 SPI（落库/日志/外部）+ 留存期策略</description>
+
+    <url>https://github.com/z-opc-foundation/z-audit</url>
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <id>yuku123</id>
+            <name>yuku123</name>
+            <email>1340947819@qq.com</email>
+            <organization>z-opc-foundation</organization>
+            <organizationUrl>https://github.com/z-opc-foundation</organizationUrl>
+            <timezone>+08:00</timezone>
+            <roles>
+                <role>owner</role>
+            </roles>
+        </developer>
+    </developers>
+    <scm>
+        <connection>scm:git:https://github.com/z-opc-foundation/z-audit.git</connection>
+        <developerConnection>scm:git:git@github.com:z-opc-foundation/z-audit.git</developerConnection>
+        <url>https://github.com/z-opc-foundation/z-audit</url>
+        <tag>HEAD</tag>
+    </scm>
+
+    <modules>
+        <module>z-audit-core</module>
+        <module>z-audit-web</module>
+    </modules>
+
+    <properties>
+        <!-- 项目自身版本（CI-friendly 根，发版改这一处）。首版号 = 1.0.0。 -->
+        <revision>1.0.0</revision>
+
+        <!-- 版本口径全部由 parent(z-boot-parent:1.2.0) 下发：maven.compiler.source/target=17、
+             UTF-8、spring-boot 3.3.13、mybatis-plus、flatten-maven-plugin 1.7.3。这里只留父链不供的键。 -->
+        <compile.version>17</compile.version>
+
+        <!-- 父链不供、此处自备的插件版本（z-biz 同款取法）。 -->
+        <versions-maven-plugin.version>2.17.1</versions-maven-plugin.version>
+
+        <!-- 本地夹具库版本（H2 跑 DDL 幂等与接口可路由，不连任何真实库）。 -->
+        <h2.version>2.2.224</h2.version>
+
+        <!-- ⚠️ 发 Maven Central 口径具备（namespace io.github.yuku123），**本轮不发制品** -->
+        <maven.deploy.skip>false</maven.deploy.skip>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- 自家 reactor 坐标钉本仓版本（写 ${revision}）。 -->
+            <dependency>
+                <groupId>io.github.yuku123</groupId>
+                <artifactId>z-audit</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.yuku123</groupId>
+                <artifactId>z-audit-core</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.yuku123</groupId>
+                <artifactId>z-audit-web</artifactId>
+                <version>${revision}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <!-- 全仓统一测试台（与 z-biz 同款；版本由 parent 的 junit-bom 下发）。 -->
+    <dependencies>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven-compiler-plugin.version}</version>
+                <configuration>
+                    <source>${compile.version}</source>
+                    <target>${compile.version}</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>versions-maven-plugin</artifactId>
+                <version>${versions-maven-plugin.version}</version>
+                <configuration>
+                    <generateBackupPoms>false</generateBackupPoms>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+                <version>${flatten-maven-plugin.version}</version>
+                <configuration>
+                    <updatePomFile>true</updatePomFile>
+                    <!-- oss 模式：保留 Central 元数据(url/licenses/developers/scm)、剥掉
+                         <parent>/<dependencyManagement>/<build>，并把 ${revision} 与继承来的
+                         依赖版本写死（与 z-biz / z-etl 同款）。 -->
+                    <flattenMode>oss</flattenMode>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>flatten</id>
+                        <phase>process-resources</phase>
+                        <goals><goal>flatten</goal></goals>
+                    </execution>
+                    <execution>
+                        <id>flatten.clean</id>
+                        <phase>clean</phase>
+                        <goals><goal>clean</goal></goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

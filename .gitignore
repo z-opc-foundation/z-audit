@@ -1,0 +1,23 @@
+# 构建产物
+**/target/
+**/dist/
+**/dist.stale-*
+**/node_modules/
+.flattened-pom.xml
+**/.flattened-pom.xml
+
+# 部署本地环境（口令只在这里或编排 Secret）
+deploy/env/.env
+.env
+.env.*
+
+# 本地数据
+*.mv.db
+*.trace.db
+*.log
+.DS_Store
+
+# 临时运行态（规范：一律写 .cache/）
+/.cache/
+**/__pycache__/
+*.pyc
