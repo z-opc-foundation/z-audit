@@ -135,7 +135,7 @@ z-audit/
 │   └── src/main/java/com/zifang/z/audit/web/
 │       ├── config/    AuditAutoConfiguration · AuditModuleDataSource · AuditHealthIndicator
 │       └── api/       AuditEventController · ChainAnchorController · ZAuditWebApplication
-└── _doc/002_deploy/init.sql    # 3 张表（幂等）
+└── _doc/002_deploy/init.sql    # 2 张表（幂等）
     └── init/002_anchor_fingerprint.sql   # 一次性增量迁移（M1 老库补 fingerprint 列）
 ```
 
@@ -187,3 +187,15 @@ GET 过滤、**绕过应用直接改库 ⇒ 检出链断**、取链尾；
 | **`CREATE TABLE IF NOT EXISTS` 不给已建表加列** | 只改 `init.sql` 只对**新库**生效 ⇒ M1 已建的库缺 `fingerprint` 列 ⇒ 运行时报 `Unknown column` | 另写一次性增量迁移 `init/002_anchor_fingerprint.sql`（查 `INFORMATION_SCHEMA` → `ADD COLUMN`） |
 | **`AuditService` 不是 `AuditQuery`** | `setQuery(AuditService)` 编译不过 | 门面不实现查询口 ⇒ 注入 `PersistentAuditStore`（它同时是 Sink 与 Query） |
 | **老行 `fingerprint` 为空 ⇒ 锚点判「不可信」** | M1 已有锚点行升级后校验失败 | **故意如此**：要求重新打锚（成本极低），比「默认可信」安全 |
+
+## 文档目录
+
+本项目文档统一收口在 `_doc/` 下（lead 002 规范八类固定编号表，桶按需存在）:
+
+- [`_doc/001_arch/`](_doc/001_arch/) — 架构与不变式：
+  - [`00-overview.md`](_doc/001_arch/00-overview.md) — 总体设计（模块与依赖方向、写读分离、链与锚分表、哈希/串行化/不可判定等十条不变式、已知边界）。
+- [`_doc/002_deploy/`](_doc/002_deploy/) — 部署资产与初始化 SQL：
+  - [`init.sql`](_doc/002_deploy/init.sql) — 2 张表（幂等，可重复执行）。
+  - [`init/`](_doc/002_deploy/init/) — 一次性增量迁移（`002_anchor_fingerprint.sql`，**只执行一次**）。
+- [`_doc/005_testing/`](_doc/005_testing/) — 验收复跑：
+  - [`001_验收复跑.md`](_doc/005_testing/001_验收复跑.md) — 五仓复跑命令、实测读数、已知边界与生产执行清单。
