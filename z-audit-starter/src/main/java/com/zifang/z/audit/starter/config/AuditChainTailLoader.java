@@ -1,4 +1,4 @@
-package com.zifang.z.audit.web.config;
+package com.zifang.z.audit.starter.config;
 
 import com.zifang.z.audit.core.service.AuditService;
 import org.springframework.boot.context.event.ApplicationReadyEvent;

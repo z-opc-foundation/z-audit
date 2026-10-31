@@ -23,6 +23,12 @@
             <artifactId>z-audit-core</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <!-- 引擎装配 + 本域数据源在 starter 里（M2 #23：引擎装配只有一处，web 不重复定义）。 -->
+        <dependency>
+            <groupId>io.github.yuku123</groupId>
+            <artifactId>z-audit-starter</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <!-- ModuleDataSourceTemplate 所在：z.base.db.* 键名模式的权威实现。 -->
         <dependency>
             <groupId>io.github.yuku123</groupId>

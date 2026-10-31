@@ -57,6 +57,7 @@
 
     <modules>
         <module>z-audit-core</module>
+        <module>z-audit-starter</module>
         <module>z-audit-web</module>
     </modules>
 
@@ -89,6 +90,11 @@
             <dependency>
                 <groupId>io.github.yuku123</groupId>
                 <artifactId>z-audit-core</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.github.yuku123</groupId>
+                <artifactId>z-audit-starter</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>

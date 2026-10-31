@@ -1,4 +1,4 @@
-package com.zifang.z.audit.web.config;
+package com.zifang.z.audit.starter.config;
 
 import com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean;
 import com.zifang.z.boot.datasource.starter.ModuleDataSourceTemplate;
