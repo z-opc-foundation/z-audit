@@ -3,6 +3,7 @@ package com.zifang.z.audit.web.config;
 import com.zifang.z.audit.core.mapper.AuditEventMapper;
 import com.zifang.z.audit.core.mapper.ChainAnchorMapper;
 import com.zifang.z.audit.core.service.AuditService;
+import com.zifang.z.audit.core.service.AuditTraceService;
 import com.zifang.z.audit.core.service.ChainAnchorService;
 import com.zifang.z.audit.core.service.PersistentAuditStore;
 import com.zifang.z.audit.core.service.PersistentChainAnchorStore;
@@ -68,6 +69,40 @@ public class AuditAutoConfiguration {
     @ConditionalOnMissingBean
     public AuditHealthIndicator auditHealthIndicator() {
         return new AuditHealthIndicator("z-audit");
+    }
+
+    /**
+     * ★ 溯源反查服务（M2 #22 —— 盲水印溯源的查询侧）。
+     *
+     * <p>查询出口直接给 {@link PersistentAuditStore}（它同时是 Sink 与 Query）——
+     * ⚠️ {@code AuditService} 是门面，**不实现** {@code AuditQuery}，不能当查询出口传。
+     *
+     * @param auditStore 落库存储（兼查询出口）
+     * @return 反查服务
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public AuditTraceService auditTraceService(PersistentAuditStore auditStore) {
+        return new AuditTraceService(auditStore);
+    }
+
+    /**
+     * ★ 启动时重载链尾哈希（M2 #22 —— 重启后链不能分叉）。
+     *
+     * <p><b>为什么必须有</b>：链尾哈希是内存变量，重启后变成链头哨兵 ⇒
+     * 下一条新事件的 {@code prevHash} 是全零 ⇒ <b>链分叉</b>：
+     * 旧链末条的 hash 对不上，且篡改者能看出「这里重启过」并在此接入伪造事件。
+     *
+     * <p><b>⚠️ 装载失败不阻断启动</b>：链尾取不到（表没建 / 库连不上）
+     * ⇒ 保留当前链尾继续跑 ⇒ 审计不能因为台账故障就整个瘫掉。
+     *
+     * @param auditService 审计门面
+     * @return 链尾重载器（启动后执行一次）
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public AuditChainTailLoader auditChainTailLoader(AuditService auditService) {
+        return new AuditChainTailLoader(auditService);
     }
 
     /**
