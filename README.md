@@ -34,6 +34,11 @@
 | 内存实现（测试 / 轻量场景） | ✅ | `support/InMemoryAuditStore` |
 | REST 端点（记 / 查 / 验链 / 取链尾） | ✅ | `web/api/AuditEventController` |
 | **链头锚定**（防尾部截断） | ✅ | `service/ChainAnchorService` · `domain/ChainAnchor` · `spi/ChainAnchorStore` |
+| **★ 按追踪码反查**（盲水印溯源的查询侧，M2 #22） | ✅ | `service/AuditTraceService` · `domain/AuditTraceResult` |
+| **★ 三态区分**（查到 / 台账没有 / 台账不可用） | ✅ | `domain/AuditTraceResult` + `spi/AuditHealth` |
+| **★ 溯源写入端点**（跨域落台账，幂等） | ✅ | `web/api/AuditTraceController`（`POST /z-team/api/audit/trace`） |
+| **★ 重启链尾重载**（不链分叉） | ✅ | `service/AuditService#reloadChainTail` + `web/config/AuditChainTailLoader` |
+| **★ 落库结果如实反映** | ✅ | `service/AuditService#recordWithOutcome` → `AuditOutcome` |
 
 ## 🔑 核心口径
 
@@ -150,28 +155,40 @@ z-audit/
 | POST | `/z-team/api/audit/chain/anchor` | **打锚点**（记录链尾 hash + 累计条数） |
 | GET | `/z-team/api/audit/chain/anchor/verify` | **校验锚点**（查尾部截断 / 锚点篡改） |
 | GET | `/z-team/api/audit/chain/anchors` | 列锚点 |
+| POST | `/z-team/api/audit/trace` | **★ 溯源写入**（z-watermark 打完水印后交过来落台账，幂等键 `WM:<traceId>`） |
+| GET | `/z-team/api/audit/trace/{traceId}` | **★ 按追踪码反查**（三态：200 查到 / 404 台账没有 / 503 台账不可用） |
 | GET | `/api/audit/health` | 健康检查（**无 /z-team 前缀**，探活路径不带业务前缀） |
+
+> ★ **本域是 `z_audit_event` 表的唯一权威写者**（哈希链要求单写者 ——
+> 多写者各持链尾 ⇒ 链分叉）。z-watermark 与 z-biz-security 编排层都交给本域写。
 
 ## 🧪 测试
 
 ```bash
 export JAVA_HOME=/Users/zifang/Library/Java/JavaVirtualMachines/corretto-17.0.19/Contents/Home
-mvn -f z-audit-core/pom.xml test    # 42 例
-mvn -f z-audit-web/pom.xml test     # 12 例（H2 真落库）
+mvn -f z-audit-core/pom.xml test    # 58 例
+mvn -f z-audit-web/pom.xml test     # 20 例（H2 真落库）
 ```
 
-**core 42 例**（原 24 + 锚点 18）：默认值补全、null 安全、出口异常不外抛、链头哨兵、
+**core 58 例**（原 24 + 锚点 18 + 溯源 16）：默认值补全、null 安全、出口异常不外抛、链头哨兵、
 链式相连、篡改检出、删除检出、空链完整、无查询出口降级、hash 依赖 prevHash、
 verify 自洽、按操作人/动作查询、取链尾、留存期各档、过期判定、可覆盖、枚举解析、出域标记；
 **锚点 18 例**：打锚记 hash+条数、空链返 null、同键覆盖、自动键、未变通过、
 新增事件后通过、**尾部截断检出**、链整条删空检出、锚点后被改检出、
 **锚点自身被篡改检出**、无锚点=不可判定、无存储=不可判定、无查询=不可判定、
-指纹绑定内容、无存储指纹时校验 false、列锚点排序、未指定键用最新。
+指纹绑定内容、无存储指纹时校验 false、列锚点排序、未指定键用最新；
+**溯源 16 例**：**三态**（查到 / 台账没有 / 台账不可用）、无 `AuditHealth` 的出口只判「查不到」、
+汇总给集合不判单值、**链尾重载**（重启后接旧链、空表保持哨兵）、
+**幂等拒收不得推进链尾**、幂等后整链仍完整、**无出口（只算链）模式链尾照常推进**、
+**落库结果如实反映**（拒收 / 正常 / 出口抛异常 3 例）。
 
-**web 12 例**（原 5 + 锚点 7）：DDL 幂等（建三遍不报错）、POST 真落库 + 链式 prevHash、
+**web 20 例**（原 5 + 锚点 7 + 溯源 8）：DDL 幂等（建三遍不报错）、POST 真落库 + 链式 prevHash、
 GET 过滤、**绕过应用直接改库 ⇒ 检出链断**、取链尾；
 **绕过应用直接 DELETE 库 ⇒ 检出尾部截断**、直接 UPDATE 锚点 ⇒ 指纹检出篡改、
-同键覆盖只 1 行、列锚点、无锚点 indeterminate、fingerprint 列非空 64 位。
+同键覆盖只 1 行、列锚点、无锚点 indeterminate、fingerprint 列非空 64 位；
+**溯源 8 例**：POST **绕过应用直接查表**验证真落库、单号落 `target_id`、幂等重复提交只有一条、
+反查 200 + summary、查不到 404、空码 4xx、**新记录 `prev_hash` 接旧链**、
+**响应必含 `trace` 单条视图**（跨域契约）。
 
 > ⚠ web 层测试**从生产 DDL 脚本读表结构**（`AuditTestSchema`），
 > 不内嵌第二份 DDL —— 内嵌一份必然漂移 ⇒ 测试全绿但生产炸。
@@ -187,6 +204,10 @@ GET 过滤、**绕过应用直接改库 ⇒ 检出链断**、取链尾；
 | **`CREATE TABLE IF NOT EXISTS` 不给已建表加列** | 只改 `init.sql` 只对**新库**生效 ⇒ M1 已建的库缺 `fingerprint` 列 ⇒ 运行时报 `Unknown column` | 另写一次性增量迁移 `init/002_anchor_fingerprint.sql`（查 `INFORMATION_SCHEMA` → `ADD COLUMN`） |
 | **`AuditService` 不是 `AuditQuery`** | `setQuery(AuditService)` 编译不过 | 门面不实现查询口 ⇒ 注入 `PersistentAuditStore`（它同时是 Sink 与 Query） |
 | **老行 `fingerprint` 为空 ⇒ 锚点判「不可信」** | M1 已有锚点行升级后校验失败 | **故意如此**：要求重新打锚（成本极低），比「默认可信」安全 |
+| **★ 幂等拒收推进了链尾 ⇒ 误报链断** | 同一 eventId 交两次 ⇒ 出口拒收但内存链尾已推进 ⇒ 下一条 `prevHash` 指向库里不存在的记录 ⇒ 链校验报「哈希不匹配」，**而台账其实没问题** | 出口拒收 ⇒ 链尾**回退**到本条 `prevHash`，再从库里 `resyncChainTail()` 接真实链尾 |
+| **★ 「无出口」与「出口拒收」没区分** | 修上一条时引入误伤：无出口（只算链）模式下 `deliver` 返回 false ⇒ 链尾被回退 ⇒ 链尾**永不推进** | 回退条件加 `!sinks.isEmpty()`；纯内存模式链尾照常推进 |
+| **★ `record()` 吞异常但返回非 null** | 出口炸了也返回 event ⇒ 调用方以为写成了 ⇒ **合规缺口被静默掩盖**（打了水印却没留痕） | 加 `recordWithOutcome()` 返回 `AuditOutcome`（事件 + `accepted`）；调用方据此如实标缺口 |
+| **★ 跨域反查响应缺 `trace` 单条字段** | 反查响应只给 `events` 数组，水印域 HTTP 客户端读的是 `trace` 对象 ⇒ **真实环境反查永远「查不到」**，而单测走内存台账**不过 HTTP** ⇒ 测不出来 | `toView()` 补 `trace` 单条视图（优先取 `WM:` 行）；加真 HTTP 契约测试（`WatermarkAuditHttpContractTest`）钉住字段名 |
 
 ## 文档目录
 
