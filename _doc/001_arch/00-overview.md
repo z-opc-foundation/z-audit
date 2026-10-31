@@ -27,8 +27,11 @@ z-audit/
 │   │              ChainAnchorService · PersistentChainAnchorStore
 │   ├── mapper/    AuditEventMapper · ChainAnchorMapper
 │   └── support/   InMemoryAuditStore · InMemoryChainAnchorStore（测试 / 轻量场景）
-└── z-audit-web/                  运行壳：数据源 + AutoConfiguration + REST（H2 真落库验收）
-    ├── config/    AuditAutoConfiguration · AuditModuleDataSource · AuditHealthIndicator
+├── z-audit-starter/              引擎装配（仅此一处）+ 本域数据源（自足带走，3 例）
+│   └── config/    AuditStarterAutoConfiguration · AuditModuleDataSource（@MapperScan）
+│                  · AuditChainTailLoader（启动重载链尾）
+└── z-audit-web/                  管控面部署：依赖 starter，只管 REST + 健康检查（20 例）
+    ├── config/    AuditAutoConfiguration（健康检查）· AuditHealthIndicator
     └── api/       AuditEventController · ChainAnchorController · AuditHealthController
 ```
 
@@ -39,6 +42,9 @@ z-audit/
 2. **链与锚分表**：`z_audit_event` 与 `z_audit_chain_anchor` 分开存 —— 锚点若与链同表，
    删表尾就能顺手改锚，外部锚定失去意义。
 3. core 不依赖同族任何仓 —— 合规层被编排层调用，反向不依赖。
+4. **引擎装配只有一处**（starter，M2 #23）：web 不重复定义任何引擎 bean；
+   本仓 starter 与三个能力仓不同——**自足带走本域数据源**
+   （引擎侧存储要构造器注入 Mapper，数据源与引擎装配同生共死，拆不进 web）。
 
 ## 3. 不变式（改代码必须守住）
 

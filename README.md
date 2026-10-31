@@ -17,7 +17,7 @@
 | 包名 | `com.zifang.z.audit.core.*` |
 | 端口 | 8097 |
 | 库 | 共用单库 `oc`（同 z-biz / z-trade） |
-| 模块 | `z-audit-core` · `z-audit-web` |
+| 模块 | `z-audit-core` · `z-audit-starter` · `z-audit-web` |
 
 ## 🎯 能力清单
 
@@ -136,13 +136,23 @@ z-audit/
 │       │              ChainAnchorService · PersistentChainAnchorStore
 │       ├── mapper/    AuditEventMapper · ChainAnchorMapper
 │       └── support/   InMemoryAuditStore · InMemoryChainAnchorStore
+├── z-audit-starter/
+│   └── src/main/java/com/zifang/z/audit/starter/config/
+│       ├── AuditStarterAutoConfiguration   引擎装配（仅此一处）+ @Import 本域数据源
+│       ├── AuditModuleDataSource           本域数据源（含 @MapperScan，与引擎同生共死）
+│       └── AuditChainTailLoader            启动重载链尾（重启后链不能分叉）
 ├── z-audit-web/
 │   └── src/main/java/com/zifang/z/audit/web/
-│       ├── config/    AuditAutoConfiguration · AuditModuleDataSource · AuditHealthIndicator
+│       ├── config/    AuditAutoConfiguration（只管部署关切：健康检查，依赖 starter）
+│       │              · AuditHealthIndicator
 │       └── api/       AuditEventController · ChainAnchorController · ZAuditWebApplication
 └── _doc/002_deploy/init.sql    # 2 张表（幂等）
     └── init/002_anchor_fingerprint.sql   # 一次性增量迁移（M1 老库补 fingerprint 列）
 ```
+
+> **引擎装配只有一处**：本仓 starter 与三个能力仓不同——**自足带走本域数据源**
+> （引擎侧存储要构造器注入 Mapper，Mapper 没有 sqlSessionFactory 就是空的
+> ⇒ 数据源必须与引擎装配同生共死，拆不进 web）。web 依赖 starter、不重复定义。
 
 ## 📡 REST 端点
 
@@ -166,8 +176,9 @@ z-audit/
 
 ```bash
 export JAVA_HOME=/Users/zifang/Library/Java/JavaVirtualMachines/corretto-17.0.19/Contents/Home
-mvn -f z-audit-core/pom.xml test    # 58 例
-mvn -f z-audit-web/pom.xml test     # 20 例（H2 真落库）
+mvn -f z-audit-core/pom.xml test       # 58 例
+mvn -f z-audit-starter/pom.xml test    # 3 例（H2 真落库）
+mvn -f z-audit-web/pom.xml test        # 20 例（H2 真落库）
 ```
 
 **core 58 例**（原 24 + 锚点 18 + 溯源 16）：默认值补全、null 安全、出口异常不外抛、链头哨兵、
@@ -192,6 +203,11 @@ GET 过滤、**绕过应用直接改库 ⇒ 检出链断**、取链尾；
 
 > ⚠ web 层测试**从生产 DDL 脚本读表结构**（`AuditTestSchema`），
 > 不内嵌第二份 DDL —— 内嵌一份必然漂移 ⇒ 测试全绿但生产炸。
+
+**starter 3 例**（嵌入式装配，宿主模拟应用放 `com.example.embedhost` 无关包树 ⇒ 组件扫描不可能兜底）：
+纯宿主只靠 `AutoConfiguration.imports` 装出**引擎全家 + 本域数据源**（门面/反查/锚点/链尾重载器/数据源齐备）、
+**嵌入的引擎真落库 + 按追踪码反查**（带链哈希，不是空壳）、
+**imports 完整性逐行 `Class.forName` 纯机械校验**（正向用例抓不住包名笔误——Spring 侧有容错，这个才判得红）。
 
 ## 📌 踩坑留档
 
