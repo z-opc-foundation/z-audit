@@ -13,7 +13,7 @@
 |---|---|
 | 层 | L3 能力仓（可被 Maven Central 口径消费；**本轮不发制品**） |
 | 坐标 | `io.github.yuku123:z-audit`，版本 `1.0.0` |
-| parent | `io.github.yuku123:z-boot-parent:1.2.0`（Java 17 / Spring Boot 3.3.13 火车） |
+| parent | `io.github.yuku123:z-boot-parent:1.2.1`（Java 17 / Spring Boot 3.3.13 火车） |
 | 包名 | `com.zifang.z.audit.core.*` |
 | 端口 | 8097 |
 | 库 | 共用单库 `oc`（同 z-biz / z-trade） |
