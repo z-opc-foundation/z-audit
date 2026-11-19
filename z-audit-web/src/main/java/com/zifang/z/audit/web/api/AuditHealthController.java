@@ -1,6 +1,7 @@
 package com.zifang.z.audit.web.api;
 
 import com.zifang.z.audit.web.config.AuditHealthIndicator;
+import com.zifang.z.meta.api.annotation.BizApi;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -29,6 +30,7 @@ public class AuditHealthController {
      * @return 健康信息
      */
     @GetMapping("/health")
+    @BizApi(summary = "健康检查", description = "健康检查。", tags = { "z-audit" })
     public Map<String, Object> health() {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("component", healthIndicator.getComponent());
@@ -36,3 +38,6 @@ public class AuditHealthController {
         return body;
     }
 }
+
+
+

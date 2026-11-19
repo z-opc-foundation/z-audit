@@ -151,9 +151,12 @@ public class ChainAnchorService {
             return new AnchorVerifyResult(false, anchor, actualCount, anchor.getEventCount(),
                     "条数与锚点一致但链尾 hash 不同 ⇒ 链被改过");
         }
-        // 锚点之后又写了新事件 ⇒ 从锚点位置往后验链是否连续
+        // 锚点之后又写了新事件 ⇒ 从锚点位置往后验链是否连续。
+        // 注意 from 必须用 0（全量）而不是 anchoredAt：anchoredAt 是打锚时刻，
+        // 与锚定事件 occurredAt 同毫秒进位时会把它排除，导致锚点定位失败（假报断口）；
+        // 锚点位置靠 hash 精确匹配，全量扫描不改变语义。
         String tailHash = tail.getHash();
-        List<AuditEvent> events = query.range(tenantId, anchor.getAnchoredAt(), Long.MAX_VALUE);
+        List<AuditEvent> events = query.range(tenantId, 0L, Long.MAX_VALUE);
         if (events == null || events.isEmpty()) {
             return new AnchorVerifyResult(false, anchor, actualCount, anchor.getEventCount(),
                     "锚点之后查不到任何事件（但链条数在增加）⇒ 链有断口");

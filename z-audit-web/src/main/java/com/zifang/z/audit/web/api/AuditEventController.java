@@ -3,6 +3,9 @@ package com.zifang.z.audit.web.api;
 import com.zifang.z.audit.core.domain.AuditEvent;
 import com.zifang.z.audit.core.service.AuditService;
 import com.zifang.z.audit.core.spi.AuditQuery;
+import com.zifang.z.meta.api.annotation.BizApi;
+import com.zifang.z.meta.api.annotation.BizField;
+import com.zifang.z.meta.api.annotation.BizParam;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -50,7 +53,8 @@ public class AuditEventController {
      * @return 落链后的事件（含 hash / prevHash）
      */
     @PostMapping("/events")
-    public ResponseEntity<Map<String, Object>> record(@RequestBody AuditEvent event) {
+    @BizApi(summary = "记一条审计事件", description = "记一条审计事件。", tags = { "z-audit" })
+    public ResponseEntity<Map<String, Object>> record(@RequestBody @BizParam(name = "event", type = BizField.FieldType.STRING, description = "事件体", position = BizParam.Position.BODY) AuditEvent event) {
         AuditService service = auditServiceProvider.getIfAvailable();
         if (service == null) {
             return ResponseEntity.status(503).body(error("审计服务未装配"));
@@ -75,14 +79,22 @@ public class AuditEventController {
      * @return 事件列表
      */
     @GetMapping("/events")
+    @BizApi(summary = "按条件查事件", description = "按条件查事件。", tags = { "z-audit" })
     public ResponseEntity<Map<String, Object>> list(
-            @RequestParam(required = false) String tenantId,
-            @RequestParam(required = false) String operatorId,
-            @RequestParam(required = false) String action,
-            @RequestParam(required = false) String traceId,
-            @RequestParam(required = false) String targetType,
-            @RequestParam(required = false) String targetId,
-            @RequestParam(required = false, defaultValue = "100") int limit) {
+            @RequestParam(required = false)
+            @BizParam(name = "tenantId", type = BizField.FieldType.STRING, description = "租户", position = BizParam.Position.QUERY) String tenantId,
+            @RequestParam(required = false)
+            @BizParam(name = "operatorId", type = BizField.FieldType.STRING, description = "操作人", position = BizParam.Position.QUERY) String operatorId,
+            @RequestParam(required = false)
+            @BizParam(name = "action", type = BizField.FieldType.STRING, description = "动作", position = BizParam.Position.QUERY) String action,
+            @RequestParam(required = false)
+            @BizParam(name = "traceId", type = BizField.FieldType.STRING, description = "追踪 ID", position = BizParam.Position.QUERY) String traceId,
+            @RequestParam(required = false)
+            @BizParam(name = "targetType", type = BizField.FieldType.STRING, description = "对象类型", position = BizParam.Position.QUERY) String targetType,
+            @RequestParam(required = false)
+            @BizParam(name = "targetId", type = BizField.FieldType.STRING, description = "对象 ID", position = BizParam.Position.QUERY) String targetId,
+            @RequestParam(required = false, defaultValue = "100")
+            @BizParam(name = "limit", type = BizField.FieldType.INTEGER, description = "条数", position = BizParam.Position.QUERY) int limit) {
         AuditService service = auditServiceProvider.getIfAvailable();
         if (service == null) {
             return ResponseEntity.status(503).body(error("审计服务未装配"));
@@ -111,10 +123,14 @@ public class AuditEventController {
      * @return 校验结果
      */
     @GetMapping("/chain/verify")
+    @BizApi(summary = "校验哈希链完整性", description = "校验哈希链完整性。", tags = { "z-audit" })
     public ResponseEntity<Map<String, Object>> verifyChain(
-            @RequestParam(required = false) String tenantId,
-            @RequestParam(required = false, defaultValue = "0") long from,
-            @RequestParam(required = false, defaultValue = "9223372036854775807") long to) {
+            @RequestParam(required = false)
+            @BizParam(name = "tenantId", type = BizField.FieldType.STRING, description = "租户", position = BizParam.Position.QUERY) String tenantId,
+            @RequestParam(required = false, defaultValue = "0")
+            @BizParam(name = "from", type = BizField.FieldType.INTEGER, description = "起（epoch 毫秒；缺省 0）", position = BizParam.Position.QUERY) long from,
+            @RequestParam(required = false, defaultValue = "9223372036854775807")
+            @BizParam(name = "to", type = BizField.FieldType.INTEGER, description = "止（epoch 毫秒；缺省 Long.MAX_VALUE）", position = BizParam.Position.QUERY) long to) {
         AuditService service = auditServiceProvider.getIfAvailable();
         if (service == null) {
             return ResponseEntity.status(503).body(error("审计服务未装配"));
@@ -136,8 +152,10 @@ public class AuditEventController {
      * @return 链尾事件
      */
     @GetMapping("/chain/latest")
+    @BizApi(summary = "取链尾事件（最新一条）", description = "取链尾事件（最新一条）。", tags = { "z-audit" })
     public ResponseEntity<Map<String, Object>> latest(
-            @RequestParam(required = false) String tenantId) {
+            @RequestParam(required = false)
+            @BizParam(name = "tenantId", type = BizField.FieldType.STRING, description = "租户", position = BizParam.Position.QUERY) String tenantId) {
         AuditService service = auditServiceProvider.getIfAvailable();
         if (service == null) {
             return ResponseEntity.status(503).body(error("审计服务未装配"));
@@ -157,3 +175,6 @@ public class AuditEventController {
         return body;
     }
 }
+
+
+

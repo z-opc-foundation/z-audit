@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.zifang.z.meta.api.annotation.BizField;
+import com.zifang.z.meta.api.annotation.BizModel;
 
 /**
  * 审计事件落库实体（表 {@code z_audit_event}）。
@@ -13,41 +15,58 @@ import com.baomidou.mybatisplus.annotation.TableName;
  *
  * @author zifang
  */
+@BizModel(name = "审计事件落库实体（表 z_audit_event）", module = "z-audit", description = "审计事件落库实体（表 z_audit_event）。 实体与领域对象分离 ：AuditEvent 是领域模型（带哈希链逻辑）， 本类是持久化载体（只管字段映射）⇒ 领域模型不被 ORM 注解污染。")
 @TableName("z_audit_event")
 public class AuditRecord {
 
     /** 主键。 */
     @TableId(type = IdType.AUTO)
+    @BizField(name = "主键", type = BizField.FieldType.INTEGER)
     private Long id;
     /** 事件 ID（追踪码，**唯一**）。 */
+    @BizField(name = "事件 ID（追踪码，唯一）", type = BizField.FieldType.STRING)
     private String eventId;
     /** 业务追踪 ID。 */
+    @BizField(name = "业务追踪 ID", type = BizField.FieldType.STRING)
     private String traceId;
     /** 操作人 ID。 */
+    @BizField(name = "操作人 ID", type = BizField.FieldType.STRING)
     private String operatorId;
     /** 操作人姓名。 */
+    @BizField(name = "操作人姓名", type = BizField.FieldType.STRING)
     private String operatorName;
     /** 租户。 */
+    @BizField(name = "租户", type = BizField.FieldType.STRING)
     private String tenantId;
     /** 动作。 */
+    @BizField(name = "动作", type = BizField.FieldType.STRING)
     private String action;
     /** 结果。 */
+    @BizField(name = "结果", type = BizField.FieldType.STRING)
     private String result;
     /** 操作对象类型。 */
+    @BizField(name = "操作对象类型", type = BizField.FieldType.STRING)
     private String targetType;
     /** 操作对象 ID。 */
+    @BizField(name = "操作对象 ID", type = BizField.FieldType.STRING)
     private String targetId;
     /** 补充说明。 */
+    @BizField(name = "补充说明", type = BizField.FieldType.STRING)
     private String detail;
     /** 客户端 IP。 */
+    @BizField(name = "客户端 IP", type = BizField.FieldType.STRING)
     private String clientIp;
     /** User-Agent。 */
+    @BizField(name = "User-Agent", type = BizField.FieldType.STRING)
     private String userAgent;
     /** 发生时刻（epoch 毫秒）。 */
+    @BizField(name = "发生时刻（epoch 毫秒）", type = BizField.FieldType.INTEGER)
     private Long occurredAt;
     /** 上一条的哈希。 */
+    @BizField(name = "上一条的哈希", type = BizField.FieldType.STRING)
     private String prevHash;
     /** 本条的哈希。 */
+    @BizField(name = "本条的哈希", type = BizField.FieldType.STRING)
     private String hash;
 
     public Long getId() {
@@ -230,3 +249,6 @@ public class AuditRecord {
         return e;
     }
 }
+
+
+

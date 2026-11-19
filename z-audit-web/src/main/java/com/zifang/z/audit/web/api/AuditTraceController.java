@@ -6,6 +6,9 @@ import com.zifang.z.audit.core.domain.AuditResult;
 import com.zifang.z.audit.core.domain.AuditTraceResult;
 import com.zifang.z.audit.core.service.AuditService;
 import com.zifang.z.audit.core.service.AuditTraceService;
+import com.zifang.z.meta.api.annotation.BizApi;
+import com.zifang.z.meta.api.annotation.BizField;
+import com.zifang.z.meta.api.annotation.BizParam;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -74,7 +77,8 @@ public class AuditTraceController {
      * @return 写入结果
      */
     @PostMapping
-    public ResponseEntity<Map<String, Object>> record(@RequestBody TraceRecordRequest request) {
+    @BizApi(summary = "★ 写一条溯源记录（幂等：同一 eventId 重复提交只留一条）", description = "★ 写一条溯源记录（幂等：同一 eventId 重复提交只留一条）。 这是 z-watermark 打完水印后唯一的落台账动作 —— 编排层（z-biz-security）也走同一个口径 ⇒ 同一份内容不会被记两次。", tags = { "z-audit" })
+    public ResponseEntity<Map<String, Object>> record(@RequestBody @BizParam(name = "request", type = BizField.FieldType.STRING, description = "请求体", position = BizParam.Position.BODY) TraceRecordRequest request) {
         AuditService service = auditServiceProvider.getIfAvailable();
         if (service == null) {
             return ResponseEntity.status(503).body(error("审计服务未装配"));
@@ -119,7 +123,8 @@ public class AuditTraceController {
      * @return 反查结果
      */
     @GetMapping("/{traceId}")
-    public ResponseEntity<Map<String, Object>> lookup(@PathVariable String traceId) {
+    @BizApi(summary = "★ 按追踪码反查（三态）", description = "★ 按追踪码反查（三态）。", tags = { "z-audit" })
+    public ResponseEntity<Map<String, Object>> lookup(@PathVariable @BizParam(name = "traceId", type = BizField.FieldType.STRING, description = "追踪码", position = BizParam.Position.PATH) String traceId) {
         AuditTraceService traceService = traceServiceProvider.getIfAvailable();
         if (traceService == null) {
             return ResponseEntity.status(503).body(error("审计反查服务未装配"));
@@ -262,3 +267,6 @@ public class AuditTraceController {
         }
     }
 }
+
+
+

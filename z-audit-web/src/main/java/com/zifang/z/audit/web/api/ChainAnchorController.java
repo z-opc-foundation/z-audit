@@ -2,6 +2,9 @@ package com.zifang.z.audit.web.api;
 
 import com.zifang.z.audit.core.domain.ChainAnchor;
 import com.zifang.z.audit.core.service.ChainAnchorService;
+import com.zifang.z.meta.api.annotation.BizApi;
+import com.zifang.z.meta.api.annotation.BizField;
+import com.zifang.z.meta.api.annotation.BizParam;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -52,9 +55,12 @@ public class ChainAnchorController {
      * @return 锚点
      */
     @PostMapping("/anchor")
+    @BizApi(summary = "打一个锚点（快照当前链尾 hash + 累计条数）", description = "打一个锚点（快照当前链尾 hash + 累计条数）。", tags = { "z-audit" })
     public ResponseEntity<Map<String, Object>> anchor(
-            @RequestParam(required = false) String tenantId,
-            @RequestParam(required = false) String anchorKey) {
+            @RequestParam(required = false)
+            @BizParam(name = "tenantId", type = BizField.FieldType.STRING, description = "租户（缺省 ⇒ 全域）", position = BizParam.Position.QUERY) String tenantId,
+            @RequestParam(required = false)
+            @BizParam(name = "anchorKey", type = BizField.FieldType.STRING, description = "锚点键（缺省 ⇒ 自动生成）", position = BizParam.Position.QUERY) String anchorKey) {
         ChainAnchorService service = anchorServiceProvider.getIfAvailable();
         if (service == null) {
             return ResponseEntity.status(503).body(error("锚点服务未装配"));
@@ -80,9 +86,12 @@ public class ChainAnchorController {
      * @return 校验结果
      */
     @GetMapping("/anchor/verify")
+    @BizApi(summary = "拿锚点回查实际链 —— 检出尾部截断", description = "拿锚点回查实际链 —— 检出尾部截断。", tags = { "z-audit" })
     public ResponseEntity<Map<String, Object>> verify(
-            @RequestParam(required = false) String tenantId,
-            @RequestParam(required = false) String anchorKey) {
+            @RequestParam(required = false)
+            @BizParam(name = "tenantId", type = BizField.FieldType.STRING, description = "租户（缺省 ⇒ 全域）", position = BizParam.Position.QUERY) String tenantId,
+            @RequestParam(required = false)
+            @BizParam(name = "anchorKey", type = BizField.FieldType.STRING, description = "锚点键（缺省 ⇒ 用最新的那个）", position = BizParam.Position.QUERY) String anchorKey) {
         ChainAnchorService service = anchorServiceProvider.getIfAvailable();
         if (service == null) {
             return ResponseEntity.status(503).body(error("锚点服务未装配"));
@@ -106,7 +115,8 @@ public class ChainAnchorController {
      * @return 锚点列表
      */
     @GetMapping("/anchors")
-    public ResponseEntity<Map<String, Object>> list(@RequestParam(required = false) String tenantId) {
+    @BizApi(summary = "列出某租户的全部锚点", description = "列出某租户的全部锚点。", tags = { "z-audit" })
+    public ResponseEntity<Map<String, Object>> list(@RequestParam(required = false) @BizParam(name = "tenantId", type = BizField.FieldType.STRING, description = "租户（缺省 ⇒ 全域）", position = BizParam.Position.QUERY) String tenantId) {
         ChainAnchorService service = anchorServiceProvider.getIfAvailable();
         if (service == null) {
             return ResponseEntity.status(503).body(error("锚点服务未装配"));
@@ -138,3 +148,6 @@ public class ChainAnchorController {
         return body;
     }
 }
+
+
+

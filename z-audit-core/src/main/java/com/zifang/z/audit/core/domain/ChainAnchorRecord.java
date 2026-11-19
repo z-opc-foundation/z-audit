@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.zifang.z.meta.api.annotation.BizField;
+import com.zifang.z.meta.api.annotation.BizModel;
 
 /**
  * 链锚点落库实体（表 {@code z_audit_chain_anchor}）。
@@ -21,24 +23,32 @@ import com.baomidou.mybatisplus.annotation.TableName;
  *
  * @author zifang
  */
+@BizModel(name = "链锚点落库实体（表 z_audit_chain_anchor）", module = "z-audit", description = "链锚点落库实体（表 z_audit_chain_anchor）。 实体与领域对象分离 ：ChainAnchor 是领域模型（带指纹逻辑）， 本类是持久化载体（只管字段映射）⇒ 领域模型不被 ORM 注解污染。 ⚠️ 为什么必须用实体、不能用 Map ： H2 在 MODE=MySQL 下会把未加引号的别名转成大写 （AS tenantId ⇒ 列标签 TENANTID）。 MyBatis 映射成 Map 时直接用原始列标签做 key ⇒ map.get(\"tenantId\") 返回 null； 而映射成实体时 MyBatis 会把列名与属性名都归一化后匹配 ⇒ 正常。 M1 的 AuditEventMapper 用实体（AuditRecord）所以没踩到， 本表若照抄用 Map 就会踩到 ⇒ 统一用实体。")
 @TableName("z_audit_chain_anchor")
 public class ChainAnchorRecord {
 
     /** 主键。 */
     @TableId(type = IdType.AUTO)
+    @BizField(name = "主键", type = BizField.FieldType.INTEGER)
     private Long id;
     /** 租户（**空串表示全域**，不用 NULL —— MySQL 唯一索引里 NULL 不相等）。 */
+    @BizField(name = "tenantId", type = BizField.FieldType.STRING)
     private String tenantId;
     /** 锚点键。 */
+    @BizField(name = "锚点键", type = BizField.FieldType.STRING)
     private String anchorKey;
     /** 锚点处的链尾哈希。 */
+    @BizField(name = "锚点处的链尾哈希", type = BizField.FieldType.STRING)
     private String chainHash;
     /** 锚点处的累计条数。 */
+    @BizField(name = "锚点处的累计条数", type = BizField.FieldType.INTEGER)
     private Long eventCount;
     /** 锚点时刻（epoch 毫秒）。 */
+    @BizField(name = "锚点时刻（epoch 毫秒）", type = BizField.FieldType.INTEGER)
     private Long anchoredAt;
     /** 锚点指纹（内容 SHA-256）。 */
     @TableField("fingerprint")
+    @BizField(name = "锚点指纹（内容 SHA-256）", type = BizField.FieldType.STRING)
     private String fingerprint;
 
     public Long getId() {
@@ -97,3 +107,6 @@ public class ChainAnchorRecord {
         this.fingerprint = fingerprint;
     }
 }
+
+
+
